@@ -3,7 +3,12 @@ from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
 import urlparse,cgi,os,Queue
 import pyio		#module for talking to the C server socket
 #custom user made module
-import router,session,
+import router,session
+#commons
+import commons
+#concurrecy assistance is good
+from threading import Thread
+from time import sleep
 
 class webHandler(BaseHTTPRequestHandler):
 	
@@ -24,10 +29,10 @@ class webHandler(BaseHTTPRequestHandler):
 		router.post(path,post_data)	#invoking the webapi and posting to the server
 		return
 
-def main():
+def init_server():
 	try:
+		print 'thread started'
     		server = HTTPServer(('localhost', 8080), webHandler)
-		pyio.write("haha",len("haha"))
     		print 'HTTPServer started'
 		os.chdir('./../Webserver/')
     		server.serve_forever()
@@ -35,12 +40,23 @@ def main():
     		print 'server.socket.close()'
     		server.socket.close()
 
+
+def main():
+	#init the webserver
+	thread  = Thread(target=init_server)
+	thread.start()
+	while True:
+		pass
+	
+
 def auth_state(status):
+	print 'uhhh uhhhh uhhh , ahhhh ahh ahhh'
+	if status=='':
+		return
 	if status=='access':
 		#need to start session
 		session.start()
-		session.session['logged']
+		session.session['logged']=True
 		#need to queue this for the webclient to get updated
-		Queue.
-	elif status=='deny':
-		#need to display message	
+	commons.mq.put({"type":"auth","status":+status})	
+	commons.got_auth_message = True

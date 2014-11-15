@@ -143,6 +143,7 @@ int serve_command(int clientfd, char* command, client_node_t** client, int* is_c
 
 		// Extract the string from the JSON object
 		char* len_str = json_dumps(json_obj, JSON_DECODE_ANY);
+		len_str="str_cookie";
 		Write(clientfd, len_str, JSON_LEN_SIZE , *client);
 		// Send the auth string
 		Write(clientfd, auth_str, strlen(auth_str), *client);

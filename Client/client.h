@@ -6,6 +6,8 @@
 #include"json_utilities.h"
 
 
+extern pthread_rwlock_t lock;
+
 int sock_fd;
 struct sockaddr_in server_sock;
 extern PyObject * pModule; //ref to the python module object
@@ -31,23 +33,34 @@ static void* heart_beat_message(void* arg)
 {
 	int * tmp = (int *)arg;
 	int sock_fd = *tmp;
-
+	
+	json_t * json_obj=NULL;
+	json_t * json_obj2=NULL;	
 	while(1)
 	{
 		printf("Sent BEEP\n");
-		char* str = JSON_make_str("HEARTBEAT","BEEP");
-		char* len_str = JSON_make_length_str(str);
+		
+		json_obj = JSON_make_str("HEARTBEAT","BEEP");
+		char* str = json_dumps(json_obj, JSON_DECODE_ANY);
+		
+		//length string json object
+		json_obj2 = JSON_make_length_str(str); 
+		char* len_str =  json_dumps(json_obj2, JSON_DECODE_ANY);
+		
 		//lock
-		pthread_mutex_lock(&lock);
+		pthread_rwlock_wrlock(&lock);
 
 		Write(sock_fd,len_str,JSON_LEN_SIZE);
 		Write(sock_fd,str,strlen(str));
 
 		//unlock
-		pthread_mutex_unlock(&lock);
+		pthread_rwlock_unlock(&lock);
+
 		sleep(4);
 	}
 
+	json_decref(json_obj);
+	json_decref(json_obj2);
 }
 
 void heartbeat_init(){
@@ -55,24 +68,25 @@ void heartbeat_init(){
 	if( pthread_create(&tid, NULL, heart_beat_message, (void*)&sock_fd) != 0)
 	{
 		printf("Failed to spawn a thread for the list monitor");
-		return -1;
 	}
 }
 
 void client_parse(char * message_json){
 	const char * value;
-	
 	/*checking for authentication*/	
-	value = JSON_get_value_from_pair(message_json,"AUTH_STATUS");
+	json_t* json_obj = JSON_get_value_from_pair(message_json,"AUTH");
+	value = json_string_value(json_obj);
 	if(value!=NULL){
-	PyObject * pFunc; = PyObject_GetAttrString(pModule, "auth_state");
+	PyObject * pFunc = PyObject_GetAttrString(pModule, "auth_state");
 	//now need to call the function
 	if (pFunc && PyCallable_Check(pFunc)) {
 		//the auth_state function in module ws is present and is callable	
-            	PyObject_CallObject(pFunc, Py_BuildValue("s", tmp));
+            	PyObject_CallObject(pFunc, Py_BuildValue("s", value));
+		printf("\ncalled obj\n");
        		}
+	json_decref(json_obj);
 	return;	//auth related
 	}
-		
+    json_decref(json_obj);
 }
 #endif
