@@ -4,11 +4,14 @@ from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
 import urlparse,cgi,os,Queue,sys
 import pyio		#module for talking to the C server socket
 #custom user made module
-import router,session
+import router
 #commons
 import commons
 #concurrecy assistance is good
 from threading import Thread
+
+#for keeping grudges
+import session
 
 
 fifo_path = "./../probe.fifo"
@@ -47,6 +50,9 @@ def command_parser(line):
 	data = json.loads(line)
 	if 'AUTH' in data.keys() and data['AUTH']=='GRANTED':
 		commons.got_auth_message = True
+		session.session['logged']=True
+	if 'AUTH' in data.keys() and data['AUTH']=='DENY':
+		commons.got_auth_message = True	
 	if 'CLIENTS_LIST' in data.keys() and data['CLIENTS_LIST']!='(null)':
 		print 'will add client to list,sooon'
 
@@ -59,6 +65,8 @@ def init_fifo_client():
 	fifo.close()
 
 def main():
+	#init session variable
+	session.start()
 	#init the webserver
 	thread  = Thread(target=init_web_server)
 	thread.start()

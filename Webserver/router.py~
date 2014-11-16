@@ -1,12 +1,24 @@
 #need to extend the interpreter for login using the extension
-import pyio,session,commons,pyjson
+import pyio,commons,pyjson
 #global definitions 
-	#instance of the handler
+
+#for auth
+from session import session
+
+#instance of the handler
 handler_obj = None
 
 def get(path):
 	#route for the landing page
 	if path is '/':
+		#may be already logged in
+		if 'logged' in session.keys() and session['logged']==True:
+			handler_obj.send_response(301)
+			host = handler_obj.headers.get('Host')
+			new_path = '%s%s'%(host, '/logerr')
+			handler_obj.send_header('Location', 'http://'+new_path)
+       			handler_obj.end_headers()
+			return
 		f=open('./views/land.html')
 		handler_obj.send_response(200)
 		handler_obj.send_header('Content-type','text/html')
@@ -14,12 +26,18 @@ def get(path):
 		handler_obj.wfile.write(f.read())	
 		return
 	if path=='/gather':
-		if True:
+		if 'logged' in session.keys() and session['logged']==True:
 			f=open('./views/gather.html')
 			handler_obj.send_response(200)
 			handler_obj.send_header('Content-type','text/html')
 			handler_obj.end_headers()
 			handler_obj.wfile.write(f.read())
+		else:
+			handler_obj.send_response(301)
+			host = handler_obj.headers.get('Host')
+			new_path = '%s%s'%(host, '/logerr')
+			handler_obj.send_header('Location', 'http://'+new_path)
+       			handler_obj.end_headers()
 	elif path=='/logerr':
 		f=open('./views/logerr.html')
 		handler_obj.send_response(200)
@@ -66,7 +84,10 @@ def post(this,path,args):
 		#means granted and added to session
 		this.send_response(301)
 		host = this.headers.get('Host')
-       		new_path = '%s%s'%(host, '/gather')
+		if 'logged' in session.keys() and session['logged']==True:
+			new_path = '%s%s'%(host, '/gather')
+		else:
+			new_path = '%s%s'%(host, '?err=log')
       		this.send_header('Location', 'http://'+new_path)
        		this.end_headers()
 	return

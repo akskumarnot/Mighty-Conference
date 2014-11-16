@@ -1,5 +1,5 @@
 #module for maintaining session
-session=None  #empty list to maintain session
+session={}  #empty list to maintain session
 def start():
 	session={}
 def end():
