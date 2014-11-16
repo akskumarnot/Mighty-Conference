@@ -1,6 +1,7 @@
 #!/usr/bin/python
+import json
 from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
-import urlparse,cgi,os,Queue
+import urlparse,cgi,os,Queue,sys
 import pyio		#module for talking to the C server socket
 #custom user made module
 import router,session
@@ -8,7 +9,9 @@ import router,session
 import commons
 #concurrecy assistance is good
 from threading import Thread
-from time import sleep
+
+
+fifo_path = "./../probe.fifo"
 
 class webHandler(BaseHTTPRequestHandler):
 	
@@ -29,7 +32,7 @@ class webHandler(BaseHTTPRequestHandler):
 		router.post(path,post_data)	#invoking the webapi and posting to the server
 		return
 
-def init_server():
+def init_web_server():
 	try:
 		print 'thread started'
     		server = HTTPServer(('localhost', 8080), webHandler)
@@ -40,23 +43,27 @@ def init_server():
     		print 'server.socket.close()'
     		server.socket.close()
 
+def command_parser(line):
+	data = json.loads(line)
+	if 'AUTH' in data.keys() and data['AUTH']=='GRANTED':
+		commons.got_auth_message = True
+	if 'CLIENTS_LIST' in data.keys() and data['CLIENTS_LIST']!='(null)':
+		print 'will add client to list,sooon'
+
+def init_fifo_client():
+	print 'fifo client started'
+	global fifo_path
+	fifo = open(fifo_path, "r")
+	for line in fifo:
+    		command_parser(line)
+	fifo.close()
 
 def main():
 	#init the webserver
-	thread  = Thread(target=init_server)
+	thread  = Thread(target=init_web_server)
+	thread.start()
+	#init the fifo client
+	thread = Thread(target=init_fifo_client)
 	thread.start()
 	while True:
 		pass
-	
-
-def auth_state(status):
-	print 'uhhh uhhhh uhhh , ahhhh ahh ahhh'
-	if status=='':
-		return
-	if status=='access':
-		#need to start session
-		session.start()
-		session.session['logged']=True
-		#need to queue this for the webclient to get updated
-	commons.mq.put({"type":"auth","status":+status})	
-	commons.got_auth_message = True

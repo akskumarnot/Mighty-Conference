@@ -14,18 +14,18 @@ def get(path):
 		handler_obj.wfile.write(f.read())	
 		return
 	if path=='/gather':
-		if session.session['logged']:
+		if True:
 			f=open('./views/gather.html')
 			handler_obj.send_response(200)
 			handler_obj.send_header('Content-type','text/html')
 			handler_obj.end_headers()
 			handler_obj.wfile.write(f.read())
-		elif path=='/logerr':
-			f=open('./views/logerr.html')
-			handler_obj.send_response(200)
-			handler_obj.send_header('Content-type','text/html')
-			handler_obj.end_headers()
-			handler_obj.wfile.write(f.read())
+	elif path=='/logerr':
+		f=open('./views/logerr.html')
+		handler_obj.send_response(200)
+		handler_obj.send_header('Content-type','text/html')
+		handler_obj.end_headers()
+		handler_obj.wfile.write(f.read())
 	#this is for sending login values to the server
 	
 		
@@ -50,7 +50,7 @@ def getFile(name):
 	handler_obj.wfile.write(f.read())
 	return True
 
-def post(path,args):
+def post(this,path,args):
 	#request for login
 	if path=='/login':
 		#send auth data using c sockets
@@ -63,17 +63,12 @@ def post(path,args):
 		while not commons.got_auth_message:		#need to make this time dependent
 			pass
 		commons.got_auth_message = False
-		#need to get the message
-		auth_dict = commons.mq.get()
-		#check status , then either redirect or deny
-		if auth_dict['type']=='auth' and auth_dict['status']=='access':
-			handler_obj.send_response(301)
-			host = handler_obj.headers.get('Host')
-       			new_path = '%s%s'%(host, 'gather')
-      			handler_obj.send_header('Location', new_path)
-       			handler_obj.end_headers()
-		elif auth_dict['type']=='auth' and auth_dict['status']=='deny':
-			pass #will handle soon
+		#means granted and added to session
+		this.send_response(301)
+		host = this.headers.get('Host')
+       		new_path = '%s%s'%(host, '/gather')
+      		this.send_header('Location', 'http://'+new_path)
+       		this.end_headers()
 	return
 
 def init(s):	

@@ -43,14 +43,13 @@ void* ws_start(void * args){
         if (pFunc && PyCallable_Check(pFunc)) {
 		//the main function in module ws is present and is callable	
             PyObject_CallObject(pFunc, NULL);
-	    ws_state=WS_RUNNING;
         }
         else {
             if (PyErr_Occurred())
                 PyErr_Print();
             fprintf(stderr, "Cannot find function \"%s\"\n", "main");
         }
-        Py_XDECREF(pFunc);
+	Py_DECREF(pFunc);
         Py_DECREF(pModule);
     }
     else {
@@ -58,13 +57,12 @@ void* ws_start(void * args){
         fprintf(stderr, "Failed to load \"%s\"\n", "webserver.py");
         return ;
     }
-	//need  to keep the thread alive
-	//while(ws_state==WS_RUNNING){}
 }
 
 //function to embed the py interpreter and start the webserver
 int ws_init(){
     pthread_t tid;
+	
     if( pthread_create(&tid, NULL, ws_start, NULL) != 0)
 	{
 		printf("Failed to spawn a thread for the python webserver");
@@ -74,7 +72,6 @@ int ws_init(){
 
 void ws_finalize(){
 	//to terminate the thread
-	ws_state= WS_STOP;
 	Py_Finalize();
 }
 #endif

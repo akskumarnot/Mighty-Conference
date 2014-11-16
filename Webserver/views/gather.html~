@@ -3,16 +3,10 @@
 <title>
 Mighty Conference
 </title>
+<link rel="stylesheet" type="text/css" href="land.css" media="screen" />
 </head>
 <body>
-	<div class="form_box">
-	<form method="post" action="/login">
-	<p>Username:<input type="text" name="username" value="id"/></p>
-	<p>Password:<input type="password" name="password" value="password"></p>
-	<input type="submit" value="go"/>	
-	</form>
-	</div>
 <script type="text/javascript" src="land.js"></script>
-<link rel="stylesheet" type="text/css" href="land.css" media="screen" />
+<p>This is the main page</p>
 </body>
 </html>

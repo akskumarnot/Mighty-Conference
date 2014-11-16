@@ -2,8 +2,13 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 #include<string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include"webserver.h"
 #include"json_utilities.h"
+#define FIFO_PATH "./../probe.fifo"
 
 
 extern pthread_rwlock_t lock;
@@ -71,22 +76,56 @@ void heartbeat_init(){
 	}
 }
 
-void client_parse(char * message_json){
-	const char * value;
-	/*checking for authentication*/	
-	json_t* json_obj = JSON_get_value_from_pair(message_json,"AUTH");
-	value = json_string_value(json_obj);
-	if(value!=NULL){
-	PyObject * pFunc = PyObject_GetAttrString(pModule, "auth_state");
-	//now need to call the function
-	if (pFunc && PyCallable_Check(pFunc)) {
-		//the auth_state function in module ws is present and is callable	
-            	PyObject_CallObject(pFunc, Py_BuildValue("s", value));
-		printf();
-       		}
-	json_decref(json_obj);
-	return;	//auth related
-	}
-    json_decref(json_obj);
+void init_fifo_server(){
+	mkfifo(FIFO_PATH,S_IRUSR| S_IWUSR);
 }
+
+void finalize_fifo_server(){
+	unlink(FIFO_PATH);
+}
+
+/*This is a temp function , need to understand later why the jannsan json won't work*/
+int remakeJSON(char * str){
+	json_t* tmp;
+	char * key=NULL;
+	const char * value;
+	
+	//trying out keys , for auth first
+	key = "AUTH";
+	tmp  = JSON_get_value_from_pair(str,key);
+	if(tmp==NULL){
+		key = NULL;	
+	}
+
+	//for client list 
+	if(key==NULL){
+	key="CLIENTS_LIST";
+	tmp = JSON_get_value_from_pair(str,key);
+	}
+	
+	if(tmp==NULL){
+		key = NULL;
+	}
+	
+	//add all checks before the following
+	if(key==NULL)
+		return 0;
+
+	json_incref(tmp);
+	//means auth data , need to get the dump
+	value = json_string_value(tmp);	
+	sprintf(str,"{\"%s\":\"%s\"}",key,value);
+	json_decref(tmp);
+	return 1;		
+}
+
+void relay(char * str){	
+	//before relaying need to put the data in the req json format
+	remakeJSON(str);
+	str = strcat(str,"\n");
+	int fd = open(FIFO_PATH, O_WRONLY);
+	write(fd,str,strlen(str));
+	close(fd);	
+}
+
 #endif

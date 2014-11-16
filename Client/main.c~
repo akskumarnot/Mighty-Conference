@@ -11,10 +11,12 @@ main(){
 	//init reader-writer lock
 	pthread_rwlock_init(&lock, NULL);
   	
+	//start fifo stuff
+	init_fifo_server();
 	//invoke the webserver
 	ws_init();	
 	//invoke the socket client
-	client_init();	//this is blocking
+	client_init();	//this is blocking	
 	while(1){
 		char len_str1[JSON_LEN_SIZE+1];
 		//getting data length
@@ -30,11 +32,12 @@ main(){
 		Read(sock_fd,strrecv,len);
 		strrecv[len] = 0;	// This is for making the char array as a string
 		//need to send data to parse
-		printf("some stuff : %s",strrecv);
-		client_parse(strrecv);
+		relay(strrecv);
 	}
 
 	pthread_rwlock_destroy(&lock);
+	//finalize fifo stuff
+	finalize_fifo_server();
 	//closing the webserver
 	ws_finalize();
 }

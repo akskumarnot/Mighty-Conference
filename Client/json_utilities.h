@@ -18,7 +18,7 @@ json_t* JSON_make_length_str(char* str)
 	if( err == -1 )
 	{
 		printf("Error in json_object_get");
-		exit(0);
+		return;
 	}
 	return len_str_object;
 }
@@ -36,11 +36,11 @@ json_t* JSON_get_value_from_pair(char* cli_strlen_JSON, char* key)
 	if( root == NULL )
 	{
 		printf("Error is decoding JSON\n");
-		exit(0);
+		return;
 	}
 	// Get the value
 	json_t* len_value_JSON = json_object_get(root, key); // Get the value JSON object of key
-	// MOST IMPORTANT Line of this header file. I have spent two days figuring out this!
+	// MOST IMPORTANT Line of this header file. I have spent two days figuring out this! akshay : haha lol
 	// len_value_JSON will be a borrowed reference. Increment it so that we can work on this object
 	// and later decrement reference
 	// ALWAYS SHOULD CALL DECREF on objects which contain reference count>0
